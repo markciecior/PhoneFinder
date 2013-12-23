@@ -116,7 +116,7 @@ public class PhoneFinderGUI extends JPanel{
 	static HashMap<String,String> IFNAME_TO_NAME = new HashMap<String,String>();
 	
 	private static boolean TESTING = true;
-	private static int maxPhones = 3;
+	private static int maxPhones = 6;
 	
 	static JFrame frame;
 	
@@ -421,9 +421,9 @@ public class PhoneFinderGUI extends JPanel{
 	    			retVal += "<hr><center><b>Phone on Interface: " + myIfName + " with name " + myCdpName + "</b></center>";
 	    			for (int l=0; l < phoneInfo.size() / 3; l++) {
 	    				retVal += "<center>";
-	    				retVal += "Phone Description:" + phoneInfo.get(l / 3) + "<br>\r\n";
-	    				retVal += "DN:" + phoneInfo.get(l / 3 + 1) + "<br>\r\n";
-	    				retVal += "DN Description:" + phoneInfo.get(l / 3 + 2) + "<br>\r\n";
+	    				retVal += "Phone Description:" + phoneInfo.get(l * 3) + "<br>\r\n";
+	    				retVal += "DN:" + phoneInfo.get(l * 3 + 1) + "<br>\r\n";
+	    				retVal += "DN Description:" + phoneInfo.get(l * 3 + 2) + "<br>\r\n";
 	    				retVal += "</center>";
 	    			}
 	    			retVal += "<table>";
