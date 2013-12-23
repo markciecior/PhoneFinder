@@ -54,10 +54,17 @@ import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 
+import javax.xml.soap.Name;
 import javax.xml.soap.SOAPBody;
+import javax.xml.soap.SOAPBodyElement;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPFactory;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 
 public class PhoneFinderGUI extends JPanel{
@@ -108,8 +115,8 @@ public class PhoneFinderGUI extends JPanel{
 	static HashMap<String,String> IFINDEX_TO_NAME = new HashMap<String,String>();
 	static HashMap<String,String> IFNAME_TO_NAME = new HashMap<String,String>();
 	
-	private static boolean TESTING = false;
-	private static int maxPhones = 4444;
+	private static boolean TESTING = true;
+	private static int maxPhones = 3;
 	
 	static JFrame frame;
 	
@@ -271,10 +278,20 @@ public class PhoneFinderGUI extends JPanel{
         add(saveButton);
 	}
 
-	public static ArrayList findElementValues(SOAPBody body) {
-		ArrayList retVal = new ArrayList();
+	@SuppressWarnings("unused")
+	public static LinkedList findElementValues(SOAPBody body) {
+		LinkedList retVal = new LinkedList();
+		NodeList rowList = body.getFirstChild().getFirstChild().getChildNodes();
 		
-		retVal.add(body.getElementsByTagName("row").item(0).getFirstChild().getNodeValue());
+		for (int h=0; h < rowList.getLength(); h++) {
+			Node row = rowList.item(h);
+			System.out.println("PhoneDesc: " + rowList.item(h).getFirstChild().getTextContent());
+			retVal.add(rowList.item(h).getFirstChild().getTextContent());
+			System.out.println("DN: " + rowList.item(h).getFirstChild().getNextSibling().getTextContent());
+			retVal.add(rowList.item(h).getFirstChild().getNextSibling().getTextContent());
+			System.out.println("DN Desc: " + rowList.item(h).getFirstChild().getNextSibling().getNextSibling().getTextContent());
+			retVal.add(rowList.item(h).getFirstChild().getNextSibling().getNextSibling().getTextContent());
+		}
 		
 		return retVal;
 	}
@@ -373,6 +390,10 @@ public class PhoneFinderGUI extends JPanel{
 			IFNAME_TO_ADDRESS = man.getIfNameToCapability(IFINDEX_TO_ADDRESS, IFINDEX_TO_IFNAME);
 			IFNAME_TO_NAME = man.getIfNameToCapability(IFINDEX_TO_NAME, IFINDEX_TO_IFNAME);
 			
+			printHashMap(IFNAME_TO_CAPABILITY);
+			printHashMap(IFNAME_TO_ADDRESS);
+			printHashMap(IFNAME_TO_NAME);
+			
 			Iterator iter = IFNAME_TO_CAPABILITY.entrySet().iterator();
 			
 			String retVal = "";
@@ -386,7 +407,6 @@ public class PhoneFinderGUI extends JPanel{
 	    		String myCap = (String)pairs.getValue();
 	    		String myAdd;
 	    		String myCdpName = IFNAME_TO_NAME.get(myIfName);
-	    		getPhoneInfo(myCdpName);
 	    		try {
 	    			myAdd = hexToAddress(IFNAME_TO_ADDRESS.get(myIfName));
 	    		} catch (NumberFormatException n) {
@@ -395,9 +415,17 @@ public class PhoneFinderGUI extends JPanel{
 	    		
 	    		if (isPhone(myCap) && j < maxPhones) {
 	    			j++;
+	    			LinkedList phoneInfo = getPhoneInfo(myCdpName);
 	    			phoneList.add(myIfName);
 	    			retVal += "<a name='" + myIfName + "'>";
 	    			retVal += "<hr><center><b>Phone on Interface: " + myIfName + " with name " + myCdpName + "</b></center>";
+	    			for (int l=0; l < phoneInfo.size() / 3; l++) {
+	    				retVal += "<center>";
+	    				retVal += "Phone Description:" + phoneInfo.get(l / 3) + "<br>\r\n";
+	    				retVal += "DN:" + phoneInfo.get(l / 3 + 1) + "<br>\r\n";
+	    				retVal += "DN Description:" + phoneInfo.get(l / 3 + 2) + "<br>\r\n";
+	    				retVal += "</center>";
+	    			}
 	    			retVal += "<table>";
 	    			System.out.println("Looking up " + myAdd);
 	    			retVal += getPhoneTable(myAdd);
@@ -470,7 +498,7 @@ public class PhoneFinderGUI extends JPanel{
 		
 	}
 	
-	public ArrayList getPhoneInfo(String phoneName) {
+	public LinkedList getPhoneInfo(String phoneName) {
 		ArrayList retVal = new ArrayList();
 		AxlSqlToolkit ast = new AxlSqlToolkit(cucmAddressText.getText(), cucmUserText.getText(), cucmPassText.getText());
 		String command = "select d.description as PHONEDESC,n.dnorpattern as DN,n.description as DNDESC from DeviceNumPlanMap dn, device d, NumPlan n where d.name='" + phoneName + "' and dn.fkDevice = d.pkid and dn.fkNumPlan = n.pkid";

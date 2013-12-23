@@ -53,9 +53,9 @@ private String BRIDGEPORT_OID = ".1.3.6.1.2.1.17.4.3.1.2";
 private String IFINDEX_OID = ".1.3.6.1.2.1.17.1.4.1.2";
 private String IFNAME_OID = ".1.3.6.1.2.1.31.1.1.1.1";
 private String ARP_OID = ".1.3.6.1.2.1.4.22.1.2";
-private String CDP_ADDRESS_OID = "";
-private String CDP_CAPABILITY_OID = "";
-private String CDP_NAME_OID = "";
+private String CDP_ADDRESS_OID = ".1.3.6.1.4.1.9.9.23.1.2.1.1.4";
+private String CDP_CAPABILITY_OID = ".1.3.6.1.4.1.9.9.23.1.2.1.1.9";
+private String CDP_NAME_OID = ".1.3.6.1.4.1.9.9.23.1.2.1.1.6";
 
 public SNMPManager(){
 	
@@ -215,9 +215,9 @@ public HashMap<String,String> getCDPAddress(String addr, String community){
 	while (iter.hasNext()){
 		bind = iter.next().getVariableBindings();
 		for (int i=0; i < bind.length; i++){
-			String ifIndex = bind[i].getOid().toString().substring(CDP_ADDRESS_OID.length());
-			String ifName = bind[i].getVariable().toString();
-			IFINDEX_TO_CDPADDRESS.put(ifIndex, ifName);		
+			String ifIndex = bind[i].getOid().toString().substring(CDP_ADDRESS_OID.length()).split("[.]")[0];
+			String cdpAddress = bind[i].getVariable().toString();
+			IFINDEX_TO_CDPADDRESS.put(ifIndex, cdpAddress);		
 		}
 		
 	}
@@ -233,7 +233,7 @@ public HashMap<String,String> getCDPCapability(String addr, String community){
 	while (iter.hasNext()){
 		bind = iter.next().getVariableBindings();
 		for (int i=0; i < bind.length; i++){
-			String ifIndex = bind[i].getOid().toString().substring(CDP_CAPABILITY_OID.length());
+			String ifIndex = bind[i].getOid().toString().substring(CDP_CAPABILITY_OID.length()).split("[.]")[0];
 			String myCap = bind[i].getVariable().toString();
 			IFINDEX_TO_CDPCAPABILITY.put(ifIndex, myCap);		
 		}
@@ -251,7 +251,7 @@ public HashMap<String,String> getCDPName(String addr, String community){
 	while (iter.hasNext()){
 		bind = iter.next().getVariableBindings();
 		for (int i=0; i < bind.length; i++){
-			String ifIndex = bind[i].getOid().toString().substring(CDP_NAME_OID.length());
+			String ifIndex = bind[i].getOid().toString().substring(CDP_NAME_OID.length()).split("[.]")[0];
 			String myName = bind[i].getVariable().toString();
 			IFINDEX_TO_CDPNAME.put(ifIndex, myName);		
 		}
@@ -273,6 +273,23 @@ public HashMap<String,String> getIfNameToCapability(HashMap<String,String> ifInd
 		MAC_TO_IFNAME.put(myIfName, myCap);
 	}
 	return MAC_TO_IFNAME;
+}
+
+public String hexToAddress(String hexAddress){
+	String retVal = "";
+	
+	String[] temp = hexAddress.split("[:]");
+	for (int i=0; i < temp.length; i++) {
+		if (i != 0) {retVal += ".";}
+		try {
+			retVal += Integer.parseInt(temp[i], 16);
+		} catch (NumberFormatException n) {
+			return "";
+		}
+	}
+
+	
+	return retVal;
 }
 
 /*The gateway's ARP table will contain all the ARP entries for all connected switches, not just

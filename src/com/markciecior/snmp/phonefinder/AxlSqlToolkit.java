@@ -211,7 +211,7 @@ public class AxlSqlToolkit {
     	SOAPMessage retVal = null;
         try {
             // first, initialize the output file
-            new FileWriter(outputFile).close();
+            /*new FileWriter(outputFile).close();
             // now look through the source file for SQL statements
             DOMParser parser = new DOMParser();
             parser.parse(new InputSource(new FileInputStream(inputFile)));
@@ -224,9 +224,9 @@ public class AxlSqlToolkit {
                 if (queryNode != null) {
                     // do the query
                     currentStatement = queryNode.getNodeValue();
-                    System.out.println(currentStatement);
+            */        System.out.println(currentStatement);
                     retVal = sendMessage(createSqlMessage("executeSQLQuery", currentStatement));
-                }
+            /*    }
                 else if (updateNode != null){
                     currentStatement = updateNode.getNodeValue();
                     System.out.println(currentStatement);
@@ -236,7 +236,7 @@ public class AxlSqlToolkit {
                     System.out.println("SQL element did not contain a query or update attribute");
                 }
                 currProp = propWalker.nextSibling();
-            }
+            }*/
         }
         catch (Exception e) {
             e.printStackTrace();
