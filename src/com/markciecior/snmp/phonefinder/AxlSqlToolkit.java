@@ -17,10 +17,7 @@
 
 package com.markciecior.snmp.phonefinder;
 
-import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -45,12 +42,8 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.xerces.parsers.DOMParser;
 import org.w3c.dom.Node;
-import org.w3c.dom.traversal.DocumentTraversal;
 import org.w3c.dom.traversal.NodeFilter;
-import org.w3c.dom.traversal.TreeWalker;
-import org.xml.sax.InputSource;
 
 
 
@@ -71,10 +64,13 @@ public class AxlSqlToolkit {
     private String password = null;
     
     /**  */
-    private String outputFile = "sample.response";
-    private String inputFile = "sample.xml";
+    @SuppressWarnings("unused")
+	private String outputFile = "sample.response";
+    @SuppressWarnings("unused")
+	private String inputFile = "sample.xml";
     
-    private String currentStatement = null;
+    @SuppressWarnings("unused")
+	private String currentStatement = null;
     
     public AxlSqlToolkit(String host, String user, String pass) {
     	this.host = host;
@@ -156,45 +152,37 @@ public class AxlSqlToolkit {
     public SOAPMessage sendMessage(SOAPMessage requestMessage) throws Exception {
         SOAPMessage reply = null;
         try {
-            System.out.println("*****************************************************************************");
+            /*System.out.println("*****************************************************************************");
             System.out.println("Sending message...");
             System.out.println("---------------------");
             requestMessage.writeTo(System.out);
             System.out.println("\n---------------------");
-
+*/
             reply = con.call(requestMessage, getUrlEndpoint());
             SOAPPart replySP = reply.getSOAPPart();
             SOAPEnvelope replySE = replySP.getEnvelope();
             SOAPBody replySB = replySE.getBody();
 
 
-            if (reply != null) {
-                //Check if reply includes soap fault
-                
-                if (replySB.hasFault()) {
-                    System.out.println("ERROR: " + replySB.getFault().getFaultString());
-                }
-                else {
-                    System.out.println("Positive response received.");
-                }
-                System.out.println("---------------------");
-                reply.writeTo(System.out);
-                FileWriter fw = new FileWriter(outputFile, true);
-                BufferedWriter bw = new BufferedWriter(fw);
-                bw.write("---------------------------- " + currentStatement + " ----------------------------");
-                bw.newLine();
-                bw.write(convertSOAPtoString(reply));
-                bw.newLine();
-                bw.flush();
-                bw.close();
-                System.out.println("\n---------------------");
-            }
-            else {
-                System.out.println("No reply was received!");
-                System.out.println("---------------------");
-            }
+            if (replySB.hasFault()) {
+			    System.out.println("ERROR: " + replySB.getFault().getFaultString());
+			}
+			else {
+			    //System.out.println("Positive response received.");
+			}
+			/*System.out.println("---------------------");
+			reply.writeTo(System.out);
+			FileWriter fw = new FileWriter(outputFile, true);
+			BufferedWriter bw = new BufferedWriter(fw);
+			bw.write("---------------------------- " + currentStatement + " ----------------------------");
+			bw.newLine();
+			bw.write(convertSOAPtoString(reply));
+			bw.newLine();
+			bw.flush();
+			bw.close();
+			System.out.println("\n---------------------");
 
-            System.out.println("");
+            System.out.println("");*/
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -224,7 +212,7 @@ public class AxlSqlToolkit {
                 if (queryNode != null) {
                     // do the query
                     currentStatement = queryNode.getNodeValue();
-            */        System.out.println(currentStatement);
+                    System.out.println(currentStatement);*/
                     retVal = sendMessage(createSqlMessage("executeSQLQuery", currentStatement));
             /*    }
                 else if (updateNode != null){
@@ -283,7 +271,8 @@ public class AxlSqlToolkit {
      * 
      * @param args DOCUMENT ME!
      */
-    private void parseArgs(String[] args) {
+    @SuppressWarnings("unused")
+	private void parseArgs(String[] args) {
         for (int i = 0; i < args.length; i++) {
             if (args[i].startsWith("-username")) {
                 username = args[i].substring(args[i].indexOf("=") + 1, args[i].length());

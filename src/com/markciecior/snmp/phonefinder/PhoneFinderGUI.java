@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.swing.BoxLayout;
@@ -54,12 +55,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 
-import javax.xml.soap.Name;
 import javax.xml.soap.SOAPBody;
-import javax.xml.soap.SOAPBodyElement;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPFactory;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -71,7 +67,7 @@ public class PhoneFinderGUI extends JPanel{
 	
 	private static final long serialVersionUID = 1L;
 
-	protected static final String licenseText = "Copyright (C) 2013 Mark Ciecior\r\n\r\n" +
+	protected static final String licenseText = "Copyright (C) 2014 Mark Ciecior\r\n\r\n" +
 
 											    "This program is free software; you can redistribute it and/or modify\r\n" +
 											    "it under the terms of the GNU General Public License as published by\r\n" +
@@ -95,16 +91,19 @@ public class PhoneFinderGUI extends JPanel{
 											    "jSoup: http://jsoup.org/license";
     
     protected static final String aboutText = "Mark's Phone Finder\r\n" +
-    										  "Version 1.0 (20 December 2013)\r\n" +
+    										  "Version 1.1 (14 January 2014)\r\n" +
     										  "by Mark Ciecior, CCIE #28274\r\n" +
     										  "www.github.com/markciecior/PhoneFinder";
     
     protected static final String helpText = "1) Enter the address/hostname and SNMP v2c community string of the\r\n" +
-    										 "  access switch whose phone information you want to scan.\r\n" +
-    										 "2) Click the GO! button.\r\n" +
-    										 "3) View the output in the center table.\r\n" +
-    										 "4) Click the Save button to save the HTML output\r\n" +
-    										 "5) Enter a new address/hostname/community string and start again!\r\n";
+    										 "  access switch whose phones you want to scan.\r\n" +
+    										 "2) Enter the address/hostname and user/pass of a CUCM user\r\n" +
+    										 "  with access to the AXL API\r\n" +
+    										 "3) Click the GO! button.\r\n" +
+    										 "4) Wait for the app to find the phones and grab their info\r\n" +
+    										 "5) View the output in the center pane\r\n" +
+    										 "6) Click the Save button to save the HTML output\r\n" +
+    										 "7) Enter a new address/hostname/community string and start again!\r\n";
 
 
 	static HashMap<String,String> IFINDEX_TO_CAPABILITY = new HashMap<String,String>();
@@ -115,8 +114,8 @@ public class PhoneFinderGUI extends JPanel{
 	static HashMap<String,String> IFINDEX_TO_NAME = new HashMap<String,String>();
 	static HashMap<String,String> IFNAME_TO_NAME = new HashMap<String,String>();
 	
-	private static boolean TESTING = true;
-	private static int maxPhones = 6;
+	private static boolean TESTING = false;
+	private static int maxPhones = 6666;
 	
 	static JFrame frame;
 	
@@ -139,9 +138,10 @@ public class PhoneFinderGUI extends JPanel{
     
     
 	
-	private static String css = "<style type='text/css'>" + 
+	private static String css = "<style type='text/css'>\r\n" + 
 								"body,\r\n" + 
-								"html {\r\n" + 
+								"html {\r\n" +
+								"font-family:serif" +
 								"margin:0;\r\n" +
 								"padding:0;\r\n" +
 								"color:#000;\r\n" +
@@ -172,7 +172,7 @@ public class PhoneFinderGUI extends JPanel{
 //								"background:#c9c;\r\n" +
 								"}\r\n" +
 								
-								"</style>";
+								"</style>\r\n";
 
 	public static void main(String[] args) throws Exception {
 		
@@ -238,7 +238,7 @@ public class PhoneFinderGUI extends JPanel{
         inputPanel.add(snmpText);
         snmpLabel.setLabelFor(snmpText);
         
-        JLabel cucmAddressLabel = new JLabel("CUCM Address:");
+        JLabel cucmAddressLabel = new JLabel("CUCM IP/Hostname:");
         JLabel cucmUserLabel = new JLabel("CUCM Username:");
         JLabel cucmPassLabel = new JLabel("CUCM Password:");
         cucmAddressText = new JTextField(CUCM_ADDRESS);
@@ -259,6 +259,7 @@ public class PhoneFinderGUI extends JPanel{
         startButton.addActionListener(new StartButtonListener());
         inputPanel.add(startButton);
         statusLabel = new JLabel();
+        statusLabel.setPreferredSize(new Dimension(300,0));
         inputPanel.add(statusLabel);
         add(inputPanel);
         
@@ -273,23 +274,25 @@ public class PhoneFinderGUI extends JPanel{
         editorScrollPane.setMinimumSize(new Dimension(10, 10));
         add(editorScrollPane);
         
+        JPanel savePanel = new JPanel();
         JButton saveButton = new JButton("Save Output as HTML");
         saveButton.addActionListener(new SaveButtonListener());
-        add(saveButton);
+        savePanel.add(saveButton);
+        add(savePanel);
 	}
 
-	@SuppressWarnings("unused")
+	@SuppressWarnings({ "unused", "rawtypes", "unchecked" })
 	public static LinkedList findElementValues(SOAPBody body) {
 		LinkedList retVal = new LinkedList();
 		NodeList rowList = body.getFirstChild().getFirstChild().getChildNodes();
 		
 		for (int h=0; h < rowList.getLength(); h++) {
 			Node row = rowList.item(h);
-			System.out.println("PhoneDesc: " + rowList.item(h).getFirstChild().getTextContent());
+			//System.out.println("PhoneDesc: " + rowList.item(h).getFirstChild().getTextContent());
 			retVal.add(rowList.item(h).getFirstChild().getTextContent());
-			System.out.println("DN: " + rowList.item(h).getFirstChild().getNextSibling().getTextContent());
+			//System.out.println("DN: " + rowList.item(h).getFirstChild().getNextSibling().getTextContent());
 			retVal.add(rowList.item(h).getFirstChild().getNextSibling().getTextContent());
-			System.out.println("DN Desc: " + rowList.item(h).getFirstChild().getNextSibling().getNextSibling().getTextContent());
+			//System.out.println("DN Desc: " + rowList.item(h).getFirstChild().getNextSibling().getNextSibling().getTextContent());
 			retVal.add(rowList.item(h).getFirstChild().getNextSibling().getNextSibling().getTextContent());
 		}
 		
@@ -306,6 +309,7 @@ public class PhoneFinderGUI extends JPanel{
         	Config.setSetting("cucmPass", cucmPassText.getText());
         	
         	statusLabel.setText("Scanning " + switchText.getText() + "...");
+        	editorPane.setText("");
         		
 			PhoneWorker myWorker = new PhoneWorker();
 			myWorker.execute();
@@ -368,15 +372,24 @@ public class PhoneFinderGUI extends JPanel{
 				String addr = switchText.getText();
 				String comm = snmpText.getText();
 				
+				statusLabel.setText("Querying switch via CDP");
 				IFINDEX_TO_ADDRESS = man.getCDPAddress(addr, comm);
 				IFINDEX_TO_CAPABILITY = man.getCDPCapability(addr, comm);
 				IFINDEX_TO_NAME = man.getCDPName(addr, comm);
 				IFINDEX_TO_IFNAME = man.getIfIndexToIfName(addr, comm);
 				
+				IFNAME_TO_CAPABILITY = man.getIfNameToCapability(IFINDEX_TO_CAPABILITY, IFINDEX_TO_IFNAME);
+				IFNAME_TO_ADDRESS = man.getIfNameToCapability(IFINDEX_TO_ADDRESS, IFINDEX_TO_IFNAME);
+				IFNAME_TO_NAME = man.getIfNameToCapability(IFINDEX_TO_NAME, IFINDEX_TO_IFNAME);
+				
+				
 				/*save(IFINDEX_TO_ADDRESS, "/home/mark/Desktop/phone/indexToAddress.txt");
 				save(IFINDEX_TO_CAPABILITY, "/home/mark/Desktop/phone/indexToCap.txt");
 				save(IFINDEX_TO_IFNAME, "/home/mark/Desktop/phone/indexToName.txt");
 				save(IFINDEX_TO_NAME, "/home/mark/Desktop/phone/indexTocdpName.txt");
+				save(IFNAME_TO_CAPABILITY, "/home/mark/Desktop/phone/ifnameToCap.txt")
+				save(IFNAME_TO_ADDRESS, "/home/mark/Desktop/phone/ifnameToAddress.txt")
+				save(IFNAME_TO_NAME, "/home/mark/Desktop/phone/ifnameToName.txt")
 				 */
 			} else {
 			
@@ -384,22 +397,24 @@ public class PhoneFinderGUI extends JPanel{
 				IFINDEX_TO_CAPABILITY = open("/home/mark/Desktop/phone/indexToCap.txt");
 				IFINDEX_TO_IFNAME = open("/home/mark/Desktop/phone/indexToName.txt");
 				IFINDEX_TO_NAME = open("/home/mark/Desktop/phone/indexTocdpName.txt");
+				IFNAME_TO_CAPABILITY = open("/home/mark/Desktop/phone/ifnameToCap.txt");
+				IFNAME_TO_ADDRESS = open("/home/mark/Desktop/phone/ifnameToAddress.txt");
+				IFNAME_TO_NAME = open("/home/mark/Desktop/phone/ifnameToName.txt");
 			}
 			
-			IFNAME_TO_CAPABILITY = man.getIfNameToCapability(IFINDEX_TO_CAPABILITY, IFINDEX_TO_IFNAME);
-			IFNAME_TO_ADDRESS = man.getIfNameToCapability(IFINDEX_TO_ADDRESS, IFINDEX_TO_IFNAME);
-			IFNAME_TO_NAME = man.getIfNameToCapability(IFINDEX_TO_NAME, IFINDEX_TO_IFNAME);
 			
-			printHashMap(IFNAME_TO_CAPABILITY);
+			/*printHashMap(IFNAME_TO_CAPABILITY);
 			printHashMap(IFNAME_TO_ADDRESS);
-			printHashMap(IFNAME_TO_NAME);
+			printHashMap(IFNAME_TO_NAME);*/
 			
 			Iterator iter = IFNAME_TO_CAPABILITY.entrySet().iterator();
 			
 			String retVal = "";
 			LinkedList<String> phoneList = new LinkedList<String>();
 			int j=0;
-			retVal += "<html><head>" + css + "</head><title>Mark's Phone Finder</title><body><div id='center'>";
+			retVal += "<html><head>" + css + "</head><title>Mark's Phone Finder</title>\r\n<body>\r\n<div id='center'>\r\n<center><h1>Phones on switch " + switchText.getText() + "</h1></center>\r\n";
+			
+			try {
 			
 			while (iter.hasNext()) {
 				Map.Entry pairs = (Map.Entry)iter.next();
@@ -410,32 +425,50 @@ public class PhoneFinderGUI extends JPanel{
 	    		try {
 	    			myAdd = hexToAddress(IFNAME_TO_ADDRESS.get(myIfName));
 	    		} catch (NumberFormatException n) {
-	    			continue;
+	    			myAdd = "";
+	    			//continue;
 	    		}
 	    		
 	    		if (isPhone(myCap) && j < maxPhones) {
 	    			j++;
-	    			LinkedList phoneInfo = getPhoneInfo(myCdpName);
+	    			statusLabel.setText("Querying CUCM about " + myCdpName);
+	    			LinkedList phoneInfo = getPhoneInfo(myCdpName.toUpperCase(Locale.ENGLISH));
 	    			phoneList.add(myIfName);
-	    			retVal += "<a name='" + myIfName + "'>";
-	    			retVal += "<hr><center><b>Phone on Interface: " + myIfName + " with name " + myCdpName + "</b></center>";
-	    			for (int l=0; l < phoneInfo.size() / 3; l++) {
-	    				retVal += "<center>";
-	    				retVal += "Phone Description:" + phoneInfo.get(l * 3) + "<br>\r\n";
-	    				retVal += "DN:" + phoneInfo.get(l * 3 + 1) + "<br>\r\n";
-	    				retVal += "DN Description:" + phoneInfo.get(l * 3 + 2) + "<br>\r\n";
-	    				retVal += "</center>";
+	    			if (phoneInfo.size() >= 1) {
+	    				phoneList.add((String) phoneInfo.get(0));
+	    			} else {
+	    				phoneList.add("");
 	    			}
-	    			retVal += "<table>";
-	    			System.out.println("Looking up " + myAdd);
+	    			retVal += "<a name='" + myIfName + "'>";
+	    			retVal += "<hr><center><b>Phone on Interface " + myIfName + " with CDP name " + myCdpName + " and CDP address " + myAdd + "</b></center>";
+	    			for (int l=0; l < phoneInfo.size() / 3; l++) {
+	    				retVal += "<center><i>";
+	    				if (l == 0) {
+	    					retVal += "Phone Description:" + phoneInfo.get(l * 3) + "<br>\r\n";
+	    				}
+	    				retVal += "DN:" + phoneInfo.get(l * 3 + 1) + ", \r\n";
+	    				retVal += "Description:" + phoneInfo.get(l * 3 + 2) + "<br>\r\n";
+	    				retVal += "</i></center>\r\n";
+	    			}
+	    			retVal += "<table>\r\n";
+	    			//System.out.println("Looking up " + myAdd);
+	    			//System.out.println("retVal Length: " + retVal.length() + " - " + myIfName);
+	    			statusLabel.setText("Scraping table from " + myAdd);
 	    			retVal += getPhoneTable(myAdd);
-	    			retVal += "</table>";
+	    			retVal += "</table>\r\n";
 	    		}
 			}
 			
 			retVal += "</div><div id='left'>";
-			for (String phone : phoneList) {
-				retVal += "<a href='#" + phone + "'>" + phone +"</br>\r\n";			
+			retVal += "<u>Interface - Phone Description</u></br>\r\n";
+			for (int k=0; k < phoneList.size(); k += 2) {
+			//for (String item : phoneList) {
+				retVal += "<a href='#" + phoneList.get(k) + "'>" + phoneList.get(k) + " - " + phoneList.get(k+1) +"</br>\r\n";
+				//System.out.println("retVal Length: " + retVal.length() + " - " + phoneList.get(k));
+			}
+			} catch (Exception g) {
+				JOptionPane.showMessageDialog(frame, g.getStackTrace(), g.getMessage(), JOptionPane.ERROR_MESSAGE);
+				g.printStackTrace(); System.exit(1); 
 			}
 			retVal += "</div>";
 			
@@ -448,6 +481,7 @@ public class PhoneFinderGUI extends JPanel{
 			} catch (Exception e){
 				e.printStackTrace();
 			}*/
+			//System.out.println(retVal);
 			publish(retVal);
 			
 			return null;
@@ -472,6 +506,7 @@ public class PhoneFinderGUI extends JPanel{
 			this.toolkit = toolkit;
 		}
 
+		@SuppressWarnings("unused")
 		@Override
 		protected Void doInBackground() throws Exception {
 			SOAPBody output = null;
@@ -498,6 +533,7 @@ public class PhoneFinderGUI extends JPanel{
 		
 	}
 	
+	@SuppressWarnings({ "rawtypes", "unused" })
 	public LinkedList getPhoneInfo(String phoneName) {
 		ArrayList retVal = new ArrayList();
 		AxlSqlToolkit ast = new AxlSqlToolkit(cucmAddressText.getText(), cucmUserText.getText(), cucmPassText.getText());

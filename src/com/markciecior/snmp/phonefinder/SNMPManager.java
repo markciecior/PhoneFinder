@@ -158,7 +158,6 @@ public HashMap<String,String> getIfIndexToIfName(String addr, String community){
 	return IFINDEX_TO_IFNAME;
 }
 	
-
 /*Go through the four hashMaps and put together the info we really want: MAC address and interface name
 */
 public HashMap<String,String> getMACToIfName(HashMap<String,String> macToCrazyId, HashMap<String,String> CrazyIdtoBridgePort, HashMap<String,String> BridgePortToIfIndex, HashMap<String,String> IfIndexToIfName){
@@ -178,7 +177,6 @@ public HashMap<String,String> getMACToIfName(HashMap<String,String> macToCrazyId
 	return MAC_TO_IFNAME;
 }
 	
-
 public HashMap<String,LinkedList<String>> getArpTable(String addr, String community){
 	List<TreeEvent> myARPs = getBulkTree(snmp, new OID(ARP_OID), addr, community);
 	HashMap<String,LinkedList<String>> MAC_TO_IP = new HashMap<String,LinkedList<String>>();
@@ -216,7 +214,7 @@ public HashMap<String,String> getCDPAddress(String addr, String community){
 		bind = iter.next().getVariableBindings();
 		for (int i=0; i < bind.length; i++){
 			String ifIndex = bind[i].getOid().toString().substring(CDP_ADDRESS_OID.length()).split("[.]")[0];
-			String cdpAddress = bind[i].getVariable().toString();
+			String cdpAddress = ((OctetString)bind[i].getVariable()).toHexString();
 			IFINDEX_TO_CDPADDRESS.put(ifIndex, cdpAddress);		
 		}
 		
